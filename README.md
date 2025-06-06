@@ -8,7 +8,7 @@ A Nighty Selfbot script that optimizes GIFs to reduce file size using Giflossy i
 - Adjust compression level with the `--lossy` parameter
 - Modify playback speed with the `--speed` parameter (broken dgaf to fix, setpts sucks ass)
 - Persistent storage option for optimized GIFs
-- Automatic upload to litterbox.catbox.moe for files over Discord's 8MB limit
+- Automatic upload to litterbox.catbox.moe for files that exceed the configured size limit (default 8MB)
 - Speed modification to make GIFs faster or slower
 
 ## Requirements
@@ -59,6 +59,9 @@ The script is designed to be used with Nighty Selfbot. Here are the main command
 - `<p>optimize lb <1|12|24|72>`
   Set litterbox file expiry time in hours (1, 12, 24, or 72)
 
+- `<p>optimize limit <size_mb>`
+  Set max file size before uploading to litterbox
+
 - `<p>optimize status`
   Check if the Giflossy container is working properly
 
@@ -88,7 +91,7 @@ The script is designed to be used with Nighty Selfbot. Here are the main command
 2. If speed modification is requested, FFmpeg is used to adjust the playback speed
 3. Giflossy applies lossy compression to reduce file size
 4. The optimized GIF is sent back to the Discord channel through Nighty Selfbot
-5. If the file is still over 8MB, it's uploaded to litterbox.catbox.moe with a time-limited link
+5. If the file is still over the configured limit (default 8MB), it's uploaded to litterbox.catbox.moe with a time-limited link
 
 ## Default Settings
 
@@ -97,6 +100,7 @@ The script is designed to be used with Nighty Selfbot. Here are the main command
 - Debug Mode: Disabled
 - Persistent Storage: Disabled
 - Litterbox Expiry: 24 hours
+- Litterbox Size Limit: 8MB
 - Download Path: System temp directory + "gif_optimizer" subfolder
 
 ## Changelog
