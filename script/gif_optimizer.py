@@ -770,4 +770,4 @@ def gif_optimizer_script():
             await msg.edit(content=error_msg)
 
 # Initialize the script
-gif_optimizer_script() 
+gif_optimizer_script()
