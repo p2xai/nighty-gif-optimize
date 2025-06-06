@@ -9,6 +9,8 @@
 <p>optimize debug (toggle debug mode)
 <p>optimize persistent (toggle persistent storage)
 <p>optimize lb <1|12|24|72> (Set litterbox expiry time in hours)
+<p>optimize limit <size_mb> (Set max file size before litterbox)
+<p>optimize results (toggle detailed results)
 <p>optimize status"""
 )
 def gif_optimizer_script():
@@ -71,9 +73,16 @@ def gif_optimizer_script():
     <p>optimize persistent (toggle persistent storage)
         Toggle persistent storage to keep optimized GIFs
     
+
     <p>optimize lb <1|12|24|72>
         Set litterbox file expiry time in hours
-    
+
+    <p>optimize limit <size_mb>
+        Set max file size before uploading to litterbox
+
+    <p>optimize results
+        Toggle detailed optimization results
+
     <p>optimize status
         Check if Giflossy container is working
     
@@ -83,6 +92,8 @@ def gif_optimizer_script():
     - Debug Mode: Disabled by default
     - Persistent Storage: Disabled by default
     - Litterbox Expiry: 24 hours
+    - Litterbox Size Limit: 8MB
+    - Detailed Results: Disabled by default
     - Download Path: System temp directory + "gif_optimizer" subfolder
       (When persistent storage is enabled, GIFs are stored in a "gifs" subfolder 
        along with a "workdir" subfolder for temporary files required for optimization)
@@ -99,7 +110,7 @@ def gif_optimizer_script():
     
     FILE SIZE LIMITATIONS:
     - Discord has a file size limit of 8MB for GIFs
-    - If the GIF is still too large after optimization, it will be uploaded to litterbox.catbox.moe
+    - Files larger than the configured limit (default 8MB) are uploaded to litterbox.catbox.moe
     - For large GIFs, it's recommended to:
       1. Use a higher lossy value (e.g., --lossy=50)
     
@@ -110,7 +121,7 @@ def gif_optimizer_script():
       based on the original GIF filename and timestamp
     - Both URL links and direct file attachments are supported
     - Giflossy optimization can significantly reduce file size while maintaining quality
-    - Large files (>8MB) are automatically uploaded to litterbox.catbox.moe
+    - Large files are uploaded to litterbox.catbox.moe when they exceed the configured limit
     - Speed modification is applied before optimization to ensure smooth playback
     - This script is specifically designed for Nighty Selfbot and uses its API
     """
@@ -128,6 +139,8 @@ def gif_optimizer_script():
     DEBUG_ENABLED_KEY = "gif_optimizer_debug_enabled"
     PERSISTENT_STORAGE_KEY = "gif_optimizer_persistent_storage"
     LITTERBOX_EXPIRY_KEY = "gif_optimizer_litterbox_expiry"
+    MAX_FILESIZE_KEY = "gif_optimizer_max_filesize"
+    DETAILED_RESULTS_KEY = "gif_optimizer_detailed_results"
     
     # Helper function for debug logging
     def debug_log(message, type_="DEBUG"):
@@ -153,6 +166,14 @@ def gif_optimizer_script():
     if getConfigData().get(LITTERBOX_EXPIRY_KEY) is None:
         updateConfigData(LITTERBOX_EXPIRY_KEY, "24h")  # Default to 24 hours
         debug_log("Initialized litterbox expiry to 24h", type_="INFO")
+
+    if getConfigData().get(MAX_FILESIZE_KEY) is None:
+        updateConfigData(MAX_FILESIZE_KEY, 8)
+        debug_log("Initialized max file size to 8MB", type_="INFO")
+
+    if getConfigData().get(DETAILED_RESULTS_KEY) is None:
+        updateConfigData(DETAILED_RESULTS_KEY, False)
+        debug_log("Initialized detailed results to disabled", type_="INFO")
     
     # Helper function to ensure download directory exists
     def ensure_download_dir(persistent=False, workdir=False):
@@ -300,7 +321,7 @@ def gif_optimizer_script():
         """Upload a file to litterbox.catbox.moe and return the URL.
         
         The uploaded file will be available for the configured duration before expiration.
-        This is used as a fallback when files are too large for Discord's 8MB limit.
+        This is used as a fallback when files exceed the configured size limit.
         """
         debug_log(f"Uploading file to litterbox.catbox.moe: {file_path}", type_="INFO")
         
@@ -473,6 +494,30 @@ def gif_optimizer_script():
             else:
                 debug_log(f"Invalid litterbox time attempted: {time}", type_="ERROR")
                 await ctx.send("Invalid time. Use 1, 12, 24, or 72 hours")
+
+            return
+
+        # Handle file size limit command
+        if args.lower().startswith("limit "):
+            size = args[6:].strip()
+            try:
+                size_mb = float(size)
+                updateConfigData(MAX_FILESIZE_KEY, size_mb)
+                debug_log(f"Max file size updated to: {size_mb}MB", type_="INFO")
+                await ctx.send(f"Litterbox upload limit set to {size_mb}MB")
+            except ValueError:
+                debug_log(f"Invalid size attempted: {size}", type_="ERROR")
+                await ctx.send("Invalid size. Provide a number in MB")
+            return
+
+        # Handle detailed results toggle
+        if args.lower() == "results":
+            current_results = getConfigData().get(DETAILED_RESULTS_KEY, False)
+            new_results = not current_results
+            updateConfigData(DETAILED_RESULTS_KEY, new_results)
+            status = "enabled" if new_results else "disabled"
+            debug_log(f"Detailed results {status}", type_="INFO")
+            await ctx.send(f"Detailed results {status}")
             return
         
         # Parse arguments for optimization
@@ -571,8 +616,9 @@ def gif_optimizer_script():
                 size_reduction = ((original_size - optimized_size) / original_size) * 100
                 debug_log(f"Size reduction: {size_reduction:.1f}%", type_="INFO")
                 
-                # If still over 8MB, try one more time with higher lossy value
-                if optimized_size > 8 and lossy_value < 50:
+                max_size = getConfigData().get(MAX_FILESIZE_KEY, 8)
+                # If still over the limit, try one more time with higher lossy value
+                if optimized_size > max_size and lossy_value < 50:
                     debug_log("GIF still too large, trying again with higher lossy value", type_="INFO")
                     giflossy_cmd = (
                         f'docker run --rm -v "{work_dir}:/src" -v "{work_dir}:/dest" dylanninin/giflossy '
@@ -590,27 +636,29 @@ def gif_optimizer_script():
                         size_reduction = ((original_size - optimized_size) / original_size) * 100
                         debug_log(f"Size reduction after second attempt: {size_reduction:.1f}%", type_="INFO")
                         
-                        if optimized_size > 8:
+                        if optimized_size > max_size:
                             debug_log("GIF still too large after second optimization", type_="WARNING")
                             # Move optimized file to output directory
                             output_path = os.path.join(output_dir, optimized_filename)
                             shutil.move(optimized_gif, output_path)
-                            await msg.edit(content="File size exceeds Discord's 8MB limit. Uploading to litterbox...")
+
+                            await msg.edit(content=f"File size exceeds {max_size}MB. Uploading to litterbox...")
                             try:
                                 litterbox_url = await upload_to_litterbox(output_path)
-                                await ctx.send(
-                                    f"**Optimization Results**\n"
-                                    f"• Original Size: {original_size:.2f}MB\n"
-                                    f"• Optimized Size: {optimized_size:.2f}MB\n"
-                                    f"• Size Reduction: {size_reduction:.1f}%\n"
-                                    f"• Lossy Level: {lossy_value}\n"
-                                    f"• Speed Factor: {speed_factor}\n\n"
-                                    f"**File Upload**\n"
-                                    f"• Status: Uploaded to litterbox\n"
-                                    f"• URL: {litterbox_url}\n"
-                                    f"• Expires: {getConfigData().get(LITTERBOX_EXPIRY_KEY, '24h')}\n\n"
-                                    f"Note: File exceeds Discord's 8MB limit"
-                                )
+                                if getConfigData().get(DETAILED_RESULTS_KEY, False):
+                                    await ctx.send(
+                                        f"Optimization Results\n"
+                                        f"Original Size: {original_size:.2f}MB\n"
+                                        f"Optimized Size: {optimized_size:.2f}MB\n"
+                                        f"Size Reduction: {size_reduction:.1f}%\n"
+                                        f"Lossy Level: {lossy_value}\n"
+                                        f"Speed Factor: {speed_factor}\n"
+                                        f"URL: {litterbox_url}\n"
+                                        f"Expires: {getConfigData().get(LITTERBOX_EXPIRY_KEY, '24h')}"
+                                    )
+                                else:
+                                    await ctx.send(litterbox_url)
+
                                 await msg.delete()
                             except Exception as upload_error:
                                 await msg.edit(content=f"Failed to upload to litterbox: {str(upload_error)}")
@@ -638,6 +686,25 @@ def gif_optimizer_script():
             
             # Check final file size before sending
             final_size = os.path.getsize(output_path) / (1024 * 1024)  # Convert to MB
+            max_size = getConfigData().get(MAX_FILESIZE_KEY, 8)
+            if final_size > max_size:
+                await msg.edit(content=f"File size exceeds {max_size}MB. Uploading to litterbox.catbox.moe...")
+                try:
+                    litterbox_url = await upload_to_litterbox(output_path)
+                    if getConfigData().get(DETAILED_RESULTS_KEY, False):
+                        await ctx.send(
+                            f"Optimization Results\n"
+                            f"Original Size: {original_size:.2f}MB\n"
+                            f"Optimized Size: {final_size:.2f}MB\n"
+                            f"Size Reduction: {size_reduction:.1f}%\n"
+                            f"Lossy Level: {lossy_value}\n"
+                            f"Speed Factor: {speed_factor}\n"
+                            f"URL: {litterbox_url}\n"
+                            f"Expires: {getConfigData().get(LITTERBOX_EXPIRY_KEY, '24h')}"
+                        )
+                    else:
+                        await ctx.send(litterbox_url)
+                        
             if final_size > 8:
                 await msg.edit(content="File size exceeds Discord's 8MB limit. Uploading to litterbox.catbox.moe...")
                 try:
@@ -655,6 +722,7 @@ def gif_optimizer_script():
                         f"• Expires: {getConfigData().get(LITTERBOX_EXPIRY_KEY, '24h')}\n\n"
                         f"Note: File exceeds Discord's 8MB limit"
                     )
+
                     await msg.delete()
                 except Exception as upload_error:
                     await msg.edit(content=f"Failed to upload to litterbox: {str(upload_error)}")
@@ -665,7 +733,21 @@ def gif_optimizer_script():
             
             # Calculate and display size reduction
             size_reduction = ((original_size - final_size) / original_size) * 100
-            await ctx.send(f"GIF Size: {final_size:.2f}MB (Reduced by {size_reduction:.1f}%) [Lossy: {lossy_value}, Speed: {speed_factor}]", file=discord.File(output_path))
+            if getConfigData().get(DETAILED_RESULTS_KEY, False):
+                await ctx.send(
+                    f"Optimization Results\n"
+                    f"Original Size: {original_size:.2f}MB\n"
+                    f"Optimized Size: {final_size:.2f}MB\n"
+                    f"Size Reduction: {size_reduction:.1f}%\n"
+                    f"Lossy Level: {lossy_value}\n"
+                    f"Speed Factor: {speed_factor}",
+                    file=discord.File(output_path)
+                )
+            else:
+                await ctx.send(
+                    f"GIF Size: {final_size:.2f}MB (Reduced by {size_reduction:.1f}%) [Lossy: {lossy_value}, Speed: {speed_factor}]",
+                    file=discord.File(output_path)
+                )
                 
             await msg.delete()
             
