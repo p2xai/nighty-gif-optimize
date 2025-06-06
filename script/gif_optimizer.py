@@ -494,6 +494,7 @@ def gif_optimizer_script():
             else:
                 debug_log(f"Invalid litterbox time attempted: {time}", type_="ERROR")
                 await ctx.send("Invalid time. Use 1, 12, 24, or 72 hours")
+
             return
 
         # Handle file size limit command
@@ -640,6 +641,7 @@ def gif_optimizer_script():
                             # Move optimized file to output directory
                             output_path = os.path.join(output_dir, optimized_filename)
                             shutil.move(optimized_gif, output_path)
+
                             await msg.edit(content=f"File size exceeds {max_size}MB. Uploading to litterbox...")
                             try:
                                 litterbox_url = await upload_to_litterbox(output_path)
@@ -656,6 +658,7 @@ def gif_optimizer_script():
                                     )
                                 else:
                                     await ctx.send(litterbox_url)
+
                                 await msg.delete()
                             except Exception as upload_error:
                                 await msg.edit(content=f"Failed to upload to litterbox: {str(upload_error)}")
@@ -701,6 +704,25 @@ def gif_optimizer_script():
                         )
                     else:
                         await ctx.send(litterbox_url)
+                        
+            if final_size > 8:
+                await msg.edit(content="File size exceeds Discord's 8MB limit. Uploading to litterbox.catbox.moe...")
+                try:
+                    litterbox_url = await upload_to_litterbox(output_path)
+                    await ctx.send(
+                        f"**Optimization Results**\n"
+                        f"• Original Size: {original_size:.2f}MB\n"
+                        f"• Optimized Size: {final_size:.2f}MB\n"
+                        f"• Size Reduction: {size_reduction:.1f}%\n"
+                        f"• Lossy Level: {lossy_value}\n"
+                        f"• Speed Factor: {speed_factor}\n\n"
+                        f"**File Upload**\n"
+                        f"• Status: Uploaded to litterbox\n"
+                        f"• URL: {litterbox_url}\n"
+                        f"• Expires: {getConfigData().get(LITTERBOX_EXPIRY_KEY, '24h')}\n\n"
+                        f"Note: File exceeds Discord's 8MB limit"
+                    )
+
                     await msg.delete()
                 except Exception as upload_error:
                     await msg.edit(content=f"Failed to upload to litterbox: {str(upload_error)}")
