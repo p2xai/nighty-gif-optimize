@@ -342,7 +342,7 @@ def gif_optimizer_script():
             updateConfigData(DEBUG_ENABLED_KEY, new_debug)
             status = "enabled" if new_debug else "disabled"
             debug_log(f"Debug mode {status}", type_="INFO")
-            await ctx.send(f"✅ Debug mode {status}")
+            await ctx.send(f"Debug mode {status}")
             return
             
         # Handle setup command
@@ -387,15 +387,15 @@ def gif_optimizer_script():
                 os.makedirs(path, exist_ok=True)
                 updateConfigData(DOWNLOAD_PATH_KEY, path)
                 debug_log(f"Download path updated to: {path}", type_="INFO")
-                await ctx.send(f"✅ Download path set to: {path}")
+                await ctx.send(f"Download path set to: {path}")
             except Exception as e:
                 debug_log(f"Error setting path: {str(e)}", type_="ERROR")
-                await ctx.send(f"❌ Error setting path: {str(e)}")
+                await ctx.send(f"Error setting path: {str(e)}")
             return
             
         # Handle status command
         if args.lower() == "status":
-            msg = await ctx.send("🔍 Checking Giflossy configuration...")
+            msg = await ctx.send("Checking Giflossy configuration...")
             try:
                 # Get current configuration
                 download_path = getConfigData().get(DOWNLOAD_PATH_KEY)
@@ -414,20 +414,20 @@ def gif_optimizer_script():
                 
                 # Create status message content
                 status_content = (
-                    f"**🎨 Docker Giflossy**: ✅ Working\n"
+                    f"**Docker Giflossy**: Working\n"
                     f"```{giflossy_version}```\n"
-                    f"**📁 Download Path**:\n"
+                    f"**Download Path**:\n"
                     f"```{download_path}```\n"
-                    f"**🔍 Path Status**: {'✅' if path_exists else '❌'} Exists, {'✅' if path_writable else '❌'} Writable\n\n"
-                    f"**⚙️ Features**:\n"
-                    f"{'✅' if debug_enabled else '❌'} 🐛 Debug Mode\n"
-                    f"{'✅' if persistent_enabled else '❌'} Persistent Storage\n"
-                    f"**📤 Litterbox**: {getConfigData().get(LITTERBOX_EXPIRY_KEY, '24h')} expiry\n\n"
-                    f"**📊 Default Settings**:\n"
-                    f"• 🔧 Lossy Level: 30\n"
-                    f"• 🕒 Speed Factor: 1.0\n"
-                    f"• 💾 Storage: gifs subfolder when persistent\n"
-                    f"• 🕒 Litterbox Expiry: {getConfigData().get(LITTERBOX_EXPIRY_KEY, '24h')}"
+                    f"**Path Status**: {'Exists' if path_exists else 'Missing'}, {'Writable' if path_writable else 'Not writable'}\n\n"
+                    f"**Features**:\n"
+                    f"{'Enabled' if debug_enabled else 'Disabled'} Debug Mode\n"
+                    f"{'Enabled' if persistent_enabled else 'Disabled'} Persistent Storage\n"
+                    f"**Litterbox**: {getConfigData().get(LITTERBOX_EXPIRY_KEY, '24h')} expiry\n\n"
+                    f"**Default Settings**:\n"
+                    f"• Lossy Level: 30\n"
+                    f"• Speed Factor: 1.0\n"
+                    f"• Storage: gifs subfolder when persistent\n"
+                    f"• Litterbox Expiry: {getConfigData().get(LITTERBOX_EXPIRY_KEY, '24h')}"
                 )
                 
                 # Save current private setting and temporarily disable it
@@ -447,7 +447,7 @@ def gif_optimizer_script():
                 debug_log("Status check successful", type_="INFO")
                 await msg.delete()
             except Exception as e:
-                error_msg = f"❌ Error checking status: {str(e)}"
+                error_msg = f"Error checking status: {str(e)}"
                 debug_log(error_msg, type_="ERROR")
                 await msg.edit(content=error_msg)
             return
@@ -459,7 +459,7 @@ def gif_optimizer_script():
             updateConfigData(PERSISTENT_STORAGE_KEY, new_persistent)
             status = "enabled" if new_persistent else "disabled"
             debug_log(f"Persistent storage {status}", type_="INFO")
-            await ctx.send(f"✅ Persistent storage {status}")
+            await ctx.send(f"Persistent storage {status}")
             return
             
         # Handle litterbox command
@@ -469,10 +469,10 @@ def gif_optimizer_script():
             if time in valid_times:
                 updateConfigData(LITTERBOX_EXPIRY_KEY, valid_times[time])
                 debug_log(f"Litterbox expiry time updated to: {valid_times[time]}", type_="INFO")
-                await ctx.send(f"✅ Litterbox file expiry set to {valid_times[time]}")
+                await ctx.send(f"Litterbox file expiry set to {valid_times[time]}")
             else:
                 debug_log(f"Invalid litterbox time attempted: {time}", type_="ERROR")
-                await ctx.send("❌ Invalid time. Use 1, 12, 24, or 72 hours")
+                await ctx.send("Invalid time. Use 1, 12, 24, or 72 hours")
             return
         
         # Parse arguments for optimization
@@ -484,16 +484,16 @@ def gif_optimizer_script():
         # Check for file attachment
         if ctx.message.attachments:
             if len(ctx.message.attachments) > 1:
-                await ctx.send("❌ Please attach only one GIF file")
+                await ctx.send("Please attach only one GIF file")
                 return
             attachment = ctx.message.attachments[0]
             gif_url = attachment.url
             debug_log(f"Using attached file: {attachment.filename}", type_="INFO")
         elif not gif_url:
-            await ctx.send("❌ Please provide a GIF URL or attach a GIF file")
+            await ctx.send("Please provide a GIF URL or attach a GIF file")
             return
         
-        msg = await ctx.send("⏳ Processing GIF...")
+        msg = await ctx.send("Processing GIF...")
         
         try:
             # Clean up any existing files first
@@ -510,7 +510,7 @@ def gif_optimizer_script():
                     pass
             
             # Download GIF
-            await msg.edit(content="⏳ Downloading GIF...")
+            await msg.edit(content="Downloading GIF...")
             gif_path = os.path.join(work_dir, "input.gif")
             async with aiohttp.ClientSession() as session:
                 async with session.get(gif_url) as response:
@@ -547,13 +547,13 @@ def gif_optimizer_script():
             
             # Modify speed if specified
             if speed_factor != 1.0:
-                await msg.edit(content=f"⏳ Modifying GIF speed to {speed_factor}x...")
+                await msg.edit(content=f"Modifying GIF speed to {speed_factor}x...")
                 speed_modified_gif = os.path.join(work_dir, "speed_modified.gif")
                 await modify_gif_speed(gif_path, speed_modified_gif, speed_factor)
                 gif_path = speed_modified_gif  # Use speed-modified GIF for optimization
             
             # Optimize with Giflossy
-            await msg.edit(content=f"⏳ Optimizing GIF with lossy={lossy_value}...")
+            await msg.edit(content=f"Optimizing GIF with lossy={lossy_value}...")
             optimized_gif = os.path.join(work_dir, "optimized.gif")
             giflossy_cmd = (
                 f'docker run --rm -v "{work_dir}:/src" -v "{work_dir}:/dest" dylanninin/giflossy '
@@ -595,25 +595,25 @@ def gif_optimizer_script():
                             # Move optimized file to output directory
                             output_path = os.path.join(output_dir, optimized_filename)
                             shutil.move(optimized_gif, output_path)
-                            await msg.edit(content="⏳ File size exceeds Discord's 8MB limit. Uploading to litterbox...")
+                            await msg.edit(content="File size exceeds Discord's 8MB limit. Uploading to litterbox...")
                             try:
                                 litterbox_url = await upload_to_litterbox(output_path)
                                 await ctx.send(
-                                    f"**📊 Optimization Results**\n"
+                                    f"**Optimization Results**\n"
                                     f"• Original Size: {original_size:.2f}MB\n"
                                     f"• Optimized Size: {optimized_size:.2f}MB\n"
                                     f"• Size Reduction: {size_reduction:.1f}%\n"
                                     f"• Lossy Level: {lossy_value}\n"
                                     f"• Speed Factor: {speed_factor}\n\n"
-                                    f"**📤 File Upload**\n"
-                                    f"• Status: ✅ Uploaded to litterbox\n"
+                                    f"**File Upload**\n"
+                                    f"• Status: Uploaded to litterbox\n"
                                     f"• URL: {litterbox_url}\n"
                                     f"• Expires: {getConfigData().get(LITTERBOX_EXPIRY_KEY, '24h')}\n\n"
-                                    f"⚠️ Note: File exceeds Discord's 8MB limit"
+                                    f"Note: File exceeds Discord's 8MB limit"
                                 )
                                 await msg.delete()
                             except Exception as upload_error:
-                                await msg.edit(content=f"❌ Failed to upload to litterbox: {str(upload_error)}")
+                                await msg.edit(content=f"Failed to upload to litterbox: {str(upload_error)}")
                             return
                         else:
                             # Move optimized file to output directory
@@ -622,7 +622,7 @@ def gif_optimizer_script():
                             debug_log("GIF optimized successfully on second attempt", type_="INFO")
                     else:
                         debug_log("Second optimization failed", type_="WARNING")
-                        await ctx.send("⚠️ GIF optimization failed. Please try again.")
+                        await ctx.send("GIF optimization failed. Please try again.")
                         await msg.delete()
                         return
                 else:
@@ -632,36 +632,36 @@ def gif_optimizer_script():
                     debug_log("GIF optimized successfully", type_="INFO")
             else:
                 debug_log("GIF optimization failed", type_="WARNING")
-                await ctx.send("⚠️ GIF optimization failed. Please try again.")
+                await ctx.send("GIF optimization failed. Please try again.")
                 await msg.delete()
                 return
             
             # Check final file size before sending
             final_size = os.path.getsize(output_path) / (1024 * 1024)  # Convert to MB
             if final_size > 8:
-                await msg.edit(content="⏳ File size exceeds Discord's 8MB limit. Uploading to litterbox.catbox.moe...")
+                await msg.edit(content="File size exceeds Discord's 8MB limit. Uploading to litterbox.catbox.moe...")
                 try:
                     litterbox_url = await upload_to_litterbox(output_path)
                     await ctx.send(
-                        f"**📊 Optimization Results**\n"
+                        f"**Optimization Results**\n"
                         f"• Original Size: {original_size:.2f}MB\n"
                         f"• Optimized Size: {final_size:.2f}MB\n"
                         f"• Size Reduction: {size_reduction:.1f}%\n"
                         f"• Lossy Level: {lossy_value}\n"
                         f"• Speed Factor: {speed_factor}\n\n"
-                        f"**📤 File Upload**\n"
-                        f"• Status: ✅ Uploaded to litterbox\n"
+                        f"**File Upload**\n"
+                        f"• Status: Uploaded to litterbox\n"
                         f"• URL: {litterbox_url}\n"
                         f"• Expires: {getConfigData().get(LITTERBOX_EXPIRY_KEY, '24h')}\n\n"
-                        f"⚠️ Note: File exceeds Discord's 8MB limit"
+                        f"Note: File exceeds Discord's 8MB limit"
                     )
                     await msg.delete()
                 except Exception as upload_error:
-                    await msg.edit(content=f"❌ Failed to upload to litterbox: {str(upload_error)}")
+                    await msg.edit(content=f"Failed to upload to litterbox: {str(upload_error)}")
                 return
                 
             # Send the optimized GIF
-            await msg.edit(content="⏳ Sending optimized GIF...")
+            await msg.edit(content="Sending optimized GIF...")
             
             # Calculate and display size reduction
             size_reduction = ((original_size - final_size) / original_size) * 100
@@ -683,7 +683,7 @@ def gif_optimizer_script():
                 debug_log(f"Cleanup error: {str(e)}", type_="WARNING")
             
         except Exception as e:
-            error_msg = f"❌ Error: {str(e)}"
+            error_msg = f"Error: {str(e)}"
             debug_log(error_msg, type_="ERROR")
             await msg.edit(content=error_msg)
 
