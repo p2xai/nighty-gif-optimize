@@ -59,11 +59,23 @@ This keeps optimized GIFs instead of removing them after sending:
 ```
 
 ### Setting Litterbox Expiry Time
-For files that exceed Discord's 8MB limit, they're uploaded to litterbox.catbox.moe. You can set the expiry time:
+For files that exceed the configured size limit (default 8MB), they're uploaded to litterbox.catbox.moe. You can set the expiry time:
 ```
 <p>optimize lb 24
 ```
 Valid values: 1, 12, 24, or 72 hours
+
+### Setting the Size Limit
+Increase the maximum file size before a GIF is uploaded to litterbox:
+```
+<p>optimize limit 16
+```
+
+### Toggling Detailed Results
+Enable or disable detailed optimization results:
+```
+<p>optimize results
+```
 
 ### Checking Status
 To verify the Docker containers are working and see current settings:
