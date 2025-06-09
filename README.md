@@ -43,7 +43,7 @@ The script is designed to be used with Nighty Selfbot. Here are the main command
   Optimize a GIF from a URL with optional parameters
 
 - `<p>optimize [--lossy=<value>] [--speed=<factor>]`
-  Optimize an attached GIF file with optional parameters
+  Optimize an attached GIF or the GIF from the previous message
 
 - `<p>optimize setup`
   Show Docker setup instructions

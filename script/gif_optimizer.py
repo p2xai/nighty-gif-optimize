@@ -535,8 +535,32 @@ def gif_optimizer_script():
             gif_url = attachment.url
             debug_log(f"Using attached file: {attachment.filename}", type_="INFO")
         elif not gif_url:
-            await ctx.send("Please provide a GIF URL or attach a GIF file")
-            return
+            # No URL or attachment in the command - check previous message
+            history = [m async for m in ctx.channel.history(limit=2)]
+            if len(history) > 1:
+                prev_msg = history[1]
+                # Look for GIF attachment
+                if prev_msg.attachments:
+                    prev_att = prev_msg.attachments[0]
+                    if prev_att.filename.lower().endswith('.gif'):
+                        gif_url = prev_att.url
+                        debug_log(
+                            f"Using GIF from previous message: {prev_att.filename}",
+                            type_="INFO",
+                        )
+                # Look for GIF URL in message content
+                if not gif_url:
+                    match = re.search(r"https?://\S+\.gif", prev_msg.content)
+                    if match:
+                        gif_url = match.group(0)
+                        debug_log(
+                            f"Using GIF URL from previous message: {gif_url}",
+                            type_="INFO",
+                        )
+
+            if not gif_url:
+                await ctx.send("Please provide a GIF URL or attach a GIF file")
+                return
         
         msg = await ctx.send("Processing GIF...")
         
@@ -704,7 +728,10 @@ def gif_optimizer_script():
                         )
                     else:
                         await ctx.send(litterbox_url)
-                        
+                except Exception as upload_error:
+                    await msg.edit(content=f"Failed to upload to litterbox: {str(upload_error)}")
+                    return
+
             if final_size > 8:
                 await msg.edit(content="File size exceeds Discord's 8MB limit. Uploading to litterbox.catbox.moe...")
                 try:
