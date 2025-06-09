@@ -8,7 +8,8 @@
 ```
 
 ### Optimizing an attached GIF
-Upload a GIF file to Discord and add the command as the comment:
+Upload a GIF file to Discord and add the command as the comment or in a
+separate message right after:
 ```
 <p>optimize
 ```
